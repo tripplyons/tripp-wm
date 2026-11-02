@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Builds tripp-wm into a signed app bundle when its source changes.
+#   tripp-wm           build if needed, then run the window manager
+#   tripp-wm --build   build if needed
+#   tripp-wmctl ...    build if needed, then run the control client
+set -euo pipefail
+
+invoked="$(basename "$0")"
+script="$0"
+while [ -L "$script" ]; do
+	link_target="$(readlink "$script")"
+	case "$link_target" in
+		/*) script="$link_target" ;;
+		*) script="$(cd "$(dirname "$script")" && pwd)/$link_target" ;;
+	esac
+done
+
+local_root="$(cd "$(dirname "$script")/.." && pwd)"
+source_dir="$local_root/libexec/tripp-wm"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/tripp-wm"
+build_dir="$cache_dir/source"
+scratch_dir="$cache_dir/build"
+app="$cache_dir/tripp-wm.app"
+ctl="$cache_dir/tripp-wmctl"
+stamp="$cache_dir/built"
+
+build() {
+	if [ ! -f "$source_dir/Package.swift" ]; then
+		echo "tripp-wm: missing Swift package: $source_dir" >&2
+		exit 1
+	fi
+	if ! command -v swift >/dev/null 2>&1; then
+		echo "tripp-wm: Swift is required; install Xcode Command Line Tools" >&2
+		exit 1
+	fi
+	mkdir -p "$cache_dir"
+	rsync -a --delete "$source_dir/" "$build_dir/"
+	swift build \
+		--package-path "$build_dir" \
+		--scratch-path "$scratch_dir" \
+		--disable-sandbox \
+		--disable-automatic-resolution \
+		--configuration release
+
+	tmp_app="$cache_dir/tripp-wm.app.tmp.$$"
+	trap 'rm -rf "$tmp_app"' EXIT
+	mkdir -p "$tmp_app/Contents/MacOS"
+	cp "$build_dir/Info.plist" "$tmp_app/Contents/Info.plist"
+	cp "$scratch_dir/release/tripp-wm" "$tmp_app/Contents/MacOS/tripp-wm"
+	# Do not use a persistent signing identity to carry permissions across builds.
+	codesign --force --sign - --identifier dev.tripp.tripp-wm "$tmp_app"
+	rm -rf "$app"
+	mv "$tmp_app" "$app"
+	trap - EXIT
+	cp "$scratch_dir/release/tripp-wmctl" "$ctl.tmp.$$"
+	mv "$ctl.tmp.$$" "$ctl"
+	touch "$stamp"
+}
+
+if [ ! -f "$stamp" ] || [ ! -x "$app/Contents/MacOS/tripp-wm" ] || [ ! -x "$ctl" ] \
+	|| find "$source_dir" -type f -newer "$stamp" -print -quit | grep -q .; then
+	if [ "$invoked" = tripp-wmctl ]; then
+		build >&2
+	else
+		build
+	fi
+fi
+
+case "$invoked" in
+	tripp-wmctl) exec "$ctl" "$@" ;;
+esac
+if [ "${1:-}" = --build ]; then
+	exit 0
+fi
+exec "$app/Contents/MacOS/tripp-wm" "$@"

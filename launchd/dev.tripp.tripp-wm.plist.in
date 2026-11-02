@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tripp.tripp-wm</string>
+	<!-- Run the signed binary itself so macOS grants permissions to tripp-wm.
+	     Build it with tripp-wm --build before loading this agent. -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>@HOME@/.cache/dotfiles/tripp-wm/tripp-wm.app/Contents/MacOS/tripp-wm</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<!-- Restart after a crash, but not after Quit. -->
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>LimitLoadToSessionType</key>
+	<string>Aqua</string>
+	<key>StandardOutPath</key>
+	<string>@HOME@/Library/Logs/tripp-wm.log</string>
+	<key>StandardErrorPath</key>
+	<string>@HOME@/Library/Logs/tripp-wm.log</string>
+</dict>
+</plist>
