@@ -233,6 +233,11 @@ public struct WMState: Sendable {
             if let previousWorkspace {
                 show(previousWorkspace)
             }
+        case let .workspaceCycle(names):
+            let next = focusedWorkspaceName
+                .flatMap { names.firstIndex(of: $0) }
+                .map { (names.index(after: $0)) % names.count } ?? 0
+            show(names[next])
         case let .moveToWorkspace(target):
             moveFocusedWindow(to: target)
         case .reloadConfig, .grid, .exec:

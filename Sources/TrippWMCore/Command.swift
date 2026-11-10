@@ -15,6 +15,9 @@ public enum Command: Equatable, Sendable {
     case workspaceNext
     case workspacePrevious
     case workspaceBackAndForth
+    /// Show the first listed workspace, or the next listed one when a listed
+    /// workspace is already focused.
+    case workspaceCycle([String])
     case moveToWorkspace(String)
     case reloadConfig
     /// Open or close the pointer grid.
@@ -91,6 +94,11 @@ public enum Command: Equatable, Sendable {
             case "back-and-forth": self = .workspaceBackAndForth
             case let workspace: self = .workspace(workspace)
             }
+        case "workspace-cycle":
+            guard !arguments.isEmpty else {
+                throw ParseError(description: "\(name) needs workspace names")
+            }
+            self = .workspaceCycle(arguments)
         case "move-to-workspace":
             self = .moveToWorkspace(try workspaceName())
         case "reload-config":

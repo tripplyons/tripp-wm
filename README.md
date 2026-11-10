@@ -66,6 +66,7 @@ Default keys:
 | Alt+1-9 | Show a workspace |
 | Alt+Shift+1-9 | Move the window to a workspace |
 | Alt+Tab | Show the previous workspace |
+| Alt+F17 | Show workspace 1, or 2 when 1 is focused |
 | Alt+U / Alt+I | Show the next or previous workspace |
 | Alt+Shift+R | Reload the config |
 

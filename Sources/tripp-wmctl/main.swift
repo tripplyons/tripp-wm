@@ -11,6 +11,7 @@ Commands:
   consume-or-expel left|right
   cycle-width | maximize-column | center-column | toggle-float
   workspace <name>|next|prev|back-and-forth
+  workspace-cycle <name>...
   move-to-workspace <name>
   grid
   exec <shell command>

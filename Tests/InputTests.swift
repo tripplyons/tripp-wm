@@ -10,6 +10,7 @@ struct CommandTests {
         #expect(try Command(parsing: "  move   down ") == .move(.down))
         #expect(try Command(parsing: "workspace back-and-forth") == .workspaceBackAndForth)
         #expect(try Command(parsing: "move-to-workspace 3") == .moveToWorkspace("3"))
+        #expect(try Command(parsing: "workspace-cycle 1 2") == .workspaceCycle(["1", "2"]))
         #expect(try IPC.Request(parsing: "query state\n") == .queryState)
         #expect(try Command(parsing: "grid") == .grid)
         #expect(try Command(parsing: "exec  open -a 'App Store'") == .exec("open -a 'App Store'"))
@@ -22,6 +23,7 @@ struct CommandTests {
         #expect(throws: Command.ParseError.self) { try Command(parsing: "cycle-width now") }
         #expect(throws: Command.ParseError.self) { try Command(parsing: "explode") }
         #expect(throws: Command.ParseError.self) { try Command(parsing: "exec  ") }
+        #expect(throws: Command.ParseError.self) { try Command(parsing: "workspace-cycle") }
     }
 }
 

@@ -179,6 +179,18 @@ struct StateTests {
     }
 
     @Test
+    func workspaceCycleShowsTheFirstOrNextListedWorkspace() {
+        var state = makeState(windows: [1])
+        state.perform(.workspace("3"))
+        state.perform(.workspaceCycle(["1", "2"]))
+        #expect(state.focusedWorkspaceName == "1")
+        state.perform(.workspaceCycle(["1", "2"]))
+        #expect(state.focusedWorkspaceName == "2")
+        state.perform(.workspaceCycle(["1", "2"]))
+        #expect(state.focusedWorkspaceName == "1")
+    }
+
+    @Test
     func focusingAHiddenWindowShowsItsWorkspace() {
         var state = makeState(windows: [1])
         state.perform(.workspace("3"))
