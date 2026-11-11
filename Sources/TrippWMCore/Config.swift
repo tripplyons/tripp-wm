@@ -184,7 +184,6 @@ public struct Config: Equatable, Sendable {
             "alt-t": "exec open -na Ghostty.app",
             "alt-shift-r": "reload-config",
             "alt-tab": "workspace back-and-forth",
-            "alt-f17": "workspace-cycle 1 2",
             "alt-n": "workspace next",
             "alt-p": "workspace prev",
         ]

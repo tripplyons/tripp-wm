@@ -50,8 +50,6 @@ accent = "#f4cb7e"
 "alt-space" = "grid"
 "alt-t" = "exec open -na Ghostty.app"
 "alt-tab" = "workspace back-and-forth"
-# Karabiner sends Alt+F17 for the j+l chord.
-"alt-f17" = "workspace-cycle 1 2"
 "alt-n" = "workspace next"
 "alt-p" = "workspace prev"
 "alt-1" = "workspace 1"

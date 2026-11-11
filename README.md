@@ -84,7 +84,6 @@ Default keys:
 | Alt+1-9 | Show a workspace |
 | Alt+Shift+1-9 | Move the window to a workspace |
 | Alt+Tab | Show the previous workspace |
-| Alt+F17 | Show workspace 1, or 2 when 1 is focused |
 | Alt+N / Alt+P | Show the next or previous workspace |
 | Alt+Shift+R | Reload the config |
 
@@ -98,7 +97,9 @@ letter, and Escape or Alt+Space closes the grid. While
 the grid is open, tripp-wm takes every key, so nothing reaches the app below.
 The `[grid]` section of the config sets its colors. It replaced Neru.
 
-Tap right Option on its own to enter the action mode. In it, every key runs
+Tap right Option on its own to enter the action mode. The j+l chord does the
+same, because the dotfiles Karabiner config maps it to right Option. In the
+mode, every key runs
 the binding it would run with Option held: H focuses left, Shift+H moves left,
 N shows the next workspace. Keys without a binding do nothing, and no key
 reaches the app. Right Option, Escape, or I leave the mode, and so do bindings
