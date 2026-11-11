@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotKeys = HotKeys()
     private let eventTap = EventTap()
     private let pointerGrid = PointerGrid()
+    private let screenWarmth = ScreenWarmth()
     private var server: ControlServer?
     private var timers: [Timer] = []
     private var signalSources: [DispatchSourceSignal] = []
@@ -37,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         setUpStatusItem()
         handleSignals()
+        screenWarmth.start()
         reloadConfig()
 
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
@@ -128,6 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func shutDown() {
+        screenWarmth.stop()
         manager?.restoreWindows()
         server?.stop()
     }
@@ -213,6 +216,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleItem.target = self
         toggleItem.action = #selector(toggleEnabled)
         menu.addItem(toggleItem)
+        menu.addItem(.separator())
+        menu.addItem(screenWarmth.menuItem)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Reload Config", action: #selector(reloadFromMenu), keyEquivalent: "r").target = self
         menu.addItem(withTitle: "Open Config", action: #selector(openConfig), keyEquivalent: "o").target = self

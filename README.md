@@ -19,6 +19,24 @@ workspace windows back on screen. Choose "Enable tripp-wm" to resume managing
 windows. It starts enabled after a restart. Logs go to
 `~/Library/Logs/tripp-wm.log`.
 
+Use the menu's "Screen warmth" slider to reduce blue and green output across
+all connected displays, including other apps and full-screen windows. The slider
+runs from Off to 100% warmth; it is a manual strength, not a color-temperature
+measurement. It starts Off on first launch, remembers changes in the app's
+UserDefaults (not `config.toml`), and reapplies after wake or display changes.
+Warmth stays active when tiling is disabled and needs no extra permissions.
+Move the slider to Off or quit tripp-wm normally to restore the display color
+curves captured before warming. A forced kill cannot run that cleanup.
+
+Turn off Night Shift, True Tone, and other display-color tools to avoid competing
+adjustments. Support depends on the display and macOS; some HDR or virtual
+displays may reject gamma-table changes or accept them without a visible effect.
+Reported failures appear below the slider, with details in its tooltip and the
+log. Other displays continue to update. If you change a color profile while
+warmth is active, turn warmth Off before changing the profile, then enable it
+again so tripp-wm captures the new curves. This feature does not use an overlay,
+a schedule, or private Night Shift APIs.
+
 Focus scrolling and window moves animate for 180 ms with ease-out cubic easing.
 Updates follow the display's refresh rate, including high-refresh-rate displays.
 Pure moves write only the position, not the size. Animation frames use cached
