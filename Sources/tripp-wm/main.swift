@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotKeys = HotKeys()
     private let eventTap = EventTap()
     private let pointerGrid = PointerGrid()
+    private let actionMode = ActionModeTap()
     private let screenWarmth = ScreenWarmth()
     private var server: ControlServer?
     private var timers: [Timer] = []
@@ -72,6 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         hotKeys.onCommand = { [weak self] command in self?.perform(command) }
         eventTap.onMouseUp = { [weak manager] in manager?.mouseReleased() }
+        actionMode.onCommand = { [weak self] command in self?.perform(command) }
+        actionMode.onModeChange = { [weak self] isOn in
+            self?.manager?.setActionMode(isOn)
+            self?.registerHotKeys()
+        }
+        startActionMode()
         apply(config)
         startEventTap()
         server?.start()
@@ -116,6 +123,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// macOS refuses keyboard taps until tripp-wm has Input Monitoring, so
+    /// keep trying until the grant arrives.
+    private func startActionMode() {
+        if actionMode.start() {
+            return
+        }
+        log("cannot read keys yet; the right Option action mode starts once Input Monitoring is granted")
+        schedule(every: 1) { [weak self] timer in
+            guard let self, self.actionMode.start() else {
+                return
+            }
+            timer.invalidate()
+            self.log("reading keys for the right Option action mode")
+        }
+    }
+
     private func handleSignals() {
         for number in [SIGTERM, SIGINT] {
             signal(number, SIG_IGN)
@@ -143,8 +166,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .reloadConfig:
             reloadConfig()
         case .grid:
+            // The grid reads keys through its own tap.
+            actionMode.exit()
             pointerGrid.toggle()
         case let .exec(shellCommand):
+            actionMode.exit()
             Launcher.run(shellCommand)
         default:
             manager?.perform(command)
@@ -191,15 +217,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         manager?.update(config: config)
         pointerGrid.colors = .init(background: config.gridBackground, text: config.gridText, accent: config.gridAccent)
         pointerGrid.toggleKeys = Set(config.bindings.filter { $0.value == .grid }.keys)
+        actionMode.mode.bindings = config.bindings
+        registerHotKeys()
+    }
+
+    /// The action mode reads every key itself, so hot keys step aside while
+    /// it is on; otherwise an Option chord would run its command twice.
+    private func registerHotKeys() {
         guard manager != nil else {
             return
         }
-        let taken = hotKeys.register(isEnabled ? config.bindings : [:])
+        let active = isEnabled && !actionMode.mode.isOn
+        let taken = hotKeys.register(active ? config.bindings : [:])
+        let prefix = "Keys used by another app: "
+        problems.removeAll { $0.hasPrefix(prefix) }
         if !taken.isEmpty {
             let keys = taken.map(\.description).sorted().joined(separator: ", ")
-            problems = ["Keys used by another app: \(keys)"]
+            problems.insert(prefix + keys, at: 0)
             log(problems[0])
         }
+        updateStatus()
     }
 
     private func modificationDate() -> Date? {
@@ -252,8 +289,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleEnabled() {
         guard let manager else { return }
         isEnabled.toggle()
+        actionMode.isAllowed = isEnabled
         if !isEnabled {
             pointerGrid.dismiss()
+            actionMode.exit()
         }
         manager.setEnabled(isEnabled)
         apply(config)

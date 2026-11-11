@@ -85,7 +85,7 @@ Default keys:
 | Alt+Shift+1-9 | Move the window to a workspace |
 | Alt+Tab | Show the previous workspace |
 | Alt+F17 | Show workspace 1, or 2 when 1 is focused |
-| Alt+U / Alt+I | Show the next or previous workspace |
+| Alt+N / Alt+P | Show the next or previous workspace |
 | Alt+Shift+R | Reload the config |
 
 Alt+Space covers the monitor under the pointer with a grid targeting 24x24
@@ -97,6 +97,14 @@ right-click, or Command to middle-click. Backspace removes the last typed
 letter, and Escape or Alt+Space closes the grid. While
 the grid is open, tripp-wm takes every key, so nothing reaches the app below.
 The `[grid]` section of the config sets its colors. It replaced Neru.
+
+Tap right Option on its own to enter the action mode. In it, every key runs
+the binding it would run with Option held: H focuses left, Shift+H moves left,
+N shows the next workspace. Keys without a binding do nothing, and no key
+reaches the app. Right Option, Escape, or I leave the mode, and so do bindings
+that hand the keyboard elsewhere (`grid` and `exec`). The focus border turns
+gray while the mode is on; `mode-color` in `[border]` sets that color. Right
+Option held together with another key still types as Option.
 
 Resizing a tiled window with the mouse sets its column width. Windows that
 cannot be resized, and apps matched by a `[[rules]]` entry with `float = true`,
@@ -161,7 +169,7 @@ The checked-in config has concrete colors from the former dotfiles theme.
 
 On first start, grant tripp-wm two permissions in System
 Settings, Privacy & Security. With Accessibility, it starts managing windows a
-moment later, and the pointer grid can read keys. With Input Monitoring, manual mouse resizing updates column widths.
+moment later, and the pointer grid can read keys. With Input Monitoring, manual mouse resizing updates column widths, and the right Option action mode can read keys.
 Without it, tripp-wm cannot detect mouse releases. Until both are granted, the menu shows which one
 is missing. launchd starts it at login and restarts it after a crash, but not
 after Quit. When it stops, it moves hidden windows back on screen.

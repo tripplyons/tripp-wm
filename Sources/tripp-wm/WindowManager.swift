@@ -65,6 +65,7 @@ final class WindowManager {
     private var windows: [WindowID: TrackedWindow] = [:]
     private var pendingFocus: (id: WindowID?, until: Date)?
     private let border = Border()
+    private var actionModeOn = false
     private var workspaceObservers: [NSObjectProtocol] = []
     private var unlistedAppTimer: Timer?
     private let animationClock = AnimationClock()
@@ -153,6 +154,13 @@ final class WindowManager {
             border.hide()
         }
         onChange?()
+    }
+
+    /// Shows the action mode through the border color.
+    func setActionMode(_ isOn: Bool) {
+        guard isOn != actionModeOn else { return }
+        actionModeOn = isOn
+        updateBorder()
     }
 
     func update(config: Config) {
@@ -444,7 +452,8 @@ final class WindowManager {
             return
         }
         border.show(
-            around: frame, above: id, width: config.borderWidth, color: config.borderColor,
+            around: frame, above: id, width: config.borderWidth,
+            color: actionModeOn ? config.borderModeColor : config.borderColor,
             animation: config.focusAnimation, monitor: state.focusedMonitor
         )
     }

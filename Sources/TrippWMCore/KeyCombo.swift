@@ -50,6 +50,19 @@ public struct KeyCombo: Hashable, Sendable, CustomStringConvertible {
         description = text
     }
 
+    /// A combo for lookups, such as a key read from an event tap.
+    public init(keyCode: UInt32, modifiers: Modifiers) {
+        self.keyCode = keyCode
+        self.modifiers = modifiers
+        let name = Self.keyCodes.filter { $0.value == keyCode }.keys.min() ?? "key\(keyCode)"
+        var parts: [String] = []
+        if modifiers.contains(.option) { parts.append("alt") }
+        if modifiers.contains(.shift) { parts.append("shift") }
+        if modifiers.contains(.control) { parts.append("ctrl") }
+        if modifiers.contains(.command) { parts.append("cmd") }
+        description = (parts + [name]).joined(separator: "-")
+    }
+
     public static func == (lhs: KeyCombo, rhs: KeyCombo) -> Bool {
         lhs.keyCode == rhs.keyCode && lhs.modifiers == rhs.modifiers
     }

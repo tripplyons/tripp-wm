@@ -56,6 +56,7 @@ struct ConfigTests {
 
         [border]
         color = "#88a0bf"
+        mode-color = "#808080"
 
         [grid]
         accent = "#88a0bf"
@@ -74,6 +75,8 @@ struct ConfigTests {
         #expect(config.layout.gaps == 4)
         #expect(config.layout.columnWidths == [0.5, 1])
         #expect(config.borderColor == RGBA(hex: "#88a0bfff"))
+        #expect(config.borderModeColor == RGBA(hex: "#808080"))
+        #expect(Config().borderModeColor == RGBA(hex: "#9a9a9a"))
         #expect(config.gridAccent == RGBA(hex: "#88a0bf"))
         #expect(config.gridText == Config().gridText)
         #expect(config.bindings == [try KeyCombo(parsing: "alt-h"): .focus(.left)])

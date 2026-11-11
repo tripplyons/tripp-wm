@@ -38,6 +38,8 @@ public struct Config: Equatable, Sendable {
     public var border = true
     public var borderWidth = 2.0
     public var borderColor = RGBA(hex: "#f4cb7e")!
+    /// Border color while the action mode is on.
+    public var borderModeColor = RGBA(hex: "#9a9a9a")!
     public var gridBackground = RGBA(hex: "#000000b3")!
     public var gridText = RGBA(hex: "#ffedd7")!
     public var gridAccent = RGBA(hex: "#f4cb7e")!
@@ -108,6 +110,7 @@ public struct Config: Equatable, Sendable {
                 borderWidth = width
             }
             borderColor = try Self.color(section.color, name: "border.color") ?? borderColor
+            borderModeColor = try Self.color(section.modeColor, name: "border.mode-color") ?? borderModeColor
         }
         if let section = file.grid {
             gridBackground = try Self.color(section.background, name: "grid.background") ?? gridBackground
@@ -182,8 +185,8 @@ public struct Config: Equatable, Sendable {
             "alt-shift-r": "reload-config",
             "alt-tab": "workspace back-and-forth",
             "alt-f17": "workspace-cycle 1 2",
-            "alt-u": "workspace next",
-            "alt-i": "workspace prev",
+            "alt-n": "workspace next",
+            "alt-p": "workspace prev",
         ]
         for (key, direction) in [("h", "left"), ("j", "down"), ("k", "up"), ("l", "right")] {
             bindings["alt-\(key)"] = "focus \(direction)"
@@ -232,6 +235,12 @@ public struct Config: Equatable, Sendable {
         var enabled: Bool?
         var width: Double?
         var color: String?
+        var modeColor: String?
+
+        enum CodingKeys: String, CodingKey {
+            case enabled, width, color
+            case modeColor = "mode-color"
+        }
     }
 
     private struct GridSection: Decodable {

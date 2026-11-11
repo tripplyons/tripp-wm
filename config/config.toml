@@ -20,6 +20,8 @@ easing = "ease-out-cubic"
 enabled = true
 width = 2
 color = "#f4cb7e"
+# Border color while the right Option action mode is on.
+mode-color = "#9a9a9a"
 
 # The pointer grid targets 24x24-point cells with three-letter labels.
 # Type a label to click. Hold Shift on the third letter to right-click,
@@ -50,8 +52,8 @@ accent = "#f4cb7e"
 "alt-tab" = "workspace back-and-forth"
 # Karabiner sends Alt+F17 for the j+l chord.
 "alt-f17" = "workspace-cycle 1 2"
-"alt-u" = "workspace next"
-"alt-i" = "workspace prev"
+"alt-n" = "workspace next"
+"alt-p" = "workspace prev"
 "alt-1" = "workspace 1"
 "alt-2" = "workspace 2"
 "alt-3" = "workspace 3"
