@@ -40,6 +40,13 @@ public struct ActionMode: Sendable {
         rightOptionAlone = false
     }
 
+    /// Leaves the mode and forgets held keys. Use it after the event stream
+    /// may have missed key ups, so the key tap does not stay on forever.
+    public mutating func reset() {
+        exit()
+        heldKeys = []
+    }
+
     /// A modifier key went down or up. Modifier events always pass, so apps
     /// keep a correct view of which modifiers are held.
     public mutating func modifierChanged(keyCode: UInt32, rightOptionDown: Bool) -> Outcome {

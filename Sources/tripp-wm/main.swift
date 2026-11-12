@@ -126,16 +126,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// macOS refuses keyboard taps until tripp-wm has Input Monitoring, so
     /// keep trying until the grant arrives.
     private func startActionMode() {
-        if actionMode.start() {
-            return
+        var started = actionMode.start()
+        if !started {
+            log("cannot read keys yet; the right Option action mode starts once Input Monitoring is granted")
         }
-        log("cannot read keys yet; the right Option action mode starts once Input Monitoring is granted")
-        schedule(every: 1) { [weak self] timer in
+        // Retries until the grant arrives, then repairs taps that macOS
+        // turned off.
+        schedule(every: 1) { [weak self] _ in
             guard let self, self.actionMode.start() else {
                 return
             }
-            timer.invalidate()
-            self.log("reading keys for the right Option action mode")
+            if !started {
+                started = true
+                self.log("reading keys for the right Option action mode")
+            }
+            self.actionMode.ensureRunning()
         }
     }
 
@@ -296,6 +301,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         manager.setEnabled(isEnabled)
         apply(config)
+        // Re-enabling rescans every window on the main thread, which can stall
+        // long enough for macOS to turn the keyboard taps off.
+        actionMode.reset()
         updateStatus()
     }
 

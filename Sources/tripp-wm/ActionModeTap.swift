@@ -17,6 +17,7 @@ final class ActionModeTap {
 
     private var modifierTap: CFMachPort?
     private var keyTap: CFMachPort?
+    private var sources: [CFRunLoopSource] = []
     private var wasOn = false
 
     /// Returns false when macOS refuses the taps, usually for lack of the
@@ -29,7 +30,7 @@ final class ActionModeTap {
             return false
         }
         guard let keys = makeTap([.keyDown, .keyUp]) else {
-            CFMachPortInvalidate(modifiers)
+            stop(modifiers)
             return false
         }
         modifierTap = modifiers
@@ -42,6 +43,50 @@ final class ActionModeTap {
     func exit() {
         mode.exit()
         sync()
+    }
+
+    /// Repairs the taps after macOS turns them off. A long stall on the main
+    /// thread, such as rescanning every window when tripp-wm is re-enabled,
+    /// makes macOS disable the taps, and the notice of that is not always
+    /// delivered. An invalidated tap cannot be turned back on, so it is
+    /// created again.
+    func ensureRunning() {
+        guard let modifierTap, let keyTap else {
+            return
+        }
+        if !CFMachPortIsValid(modifierTap) || !CFMachPortIsValid(keyTap) {
+            stop(modifierTap)
+            stop(keyTap)
+            self.modifierTap = nil
+            self.keyTap = nil
+            mode.reset()
+            sync()
+            _ = start()
+            return
+        }
+        if !CGEvent.tapIsEnabled(tap: modifierTap) || CGEvent.tapIsEnabled(tap: keyTap) != mode.needsKeys {
+            sync()
+        }
+    }
+
+    /// Forgets keys whose release may have been missed while the taps were
+    /// off, then repairs the taps.
+    func reset() {
+        mode.reset()
+        sync()
+        ensureRunning()
+    }
+
+    private func stop(_ tap: CFMachPort) {
+        CGEvent.tapEnable(tap: tap, enable: false)
+        CFMachPortInvalidate(tap)
+        sources.removeAll { source in
+            guard !CFRunLoopSourceIsValid(source) else {
+                return false
+            }
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            return true
+        }
     }
 
     private func makeTap(_ types: [CGEventType]) -> CFMachPort? {
@@ -66,6 +111,9 @@ final class ActionModeTap {
         }
         let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        if let source {
+            sources.append(source)
+        }
         return tap
     }
 
