@@ -4,6 +4,8 @@ import TrippWMCore
 /// Feeds keyboard events to `ActionMode`. One tap always watches modifier
 /// changes for the right Option toggle; a second tap reads and drops keys
 /// only while the mode needs them, so normal typing never waits on tripp-wm.
+/// The modifier tap only listens, so modifier events never wait on tripp-wm
+/// and a busy main thread cannot make macOS time it out.
 @MainActor
 final class ActionModeTap {
     /// Device-dependent flag bit for the right Option key (NX_DEVICERALTKEYMASK).
@@ -19,6 +21,9 @@ final class ActionModeTap {
     private var keyTap: CFMachPort?
     private var sources: [CFRunLoopSource] = []
     private var wasOn = false
+    /// The key tap state last asked of macOS. Each enable or disable is a
+    /// round trip to the window server, so `sync` sends one only on change.
+    private var keyTapEnabled = false
 
     /// Returns false when macOS refuses the taps, usually for lack of the
     /// Input Monitoring permission.
@@ -26,10 +31,10 @@ final class ActionModeTap {
         guard modifierTap == nil else {
             return true
         }
-        guard let modifiers = makeTap([.flagsChanged]) else {
+        guard let modifiers = makeTap([.flagsChanged], options: .listenOnly) else {
             return false
         }
-        guard let keys = makeTap([.keyDown, .keyUp]) else {
+        guard let keys = makeTap([.keyDown, .keyUp], options: .defaultTap) else {
             stop(modifiers)
             return false
         }
@@ -37,6 +42,7 @@ final class ActionModeTap {
         keyTap = keys
         CGEvent.tapEnable(tap: modifiers, enable: true)
         CGEvent.tapEnable(tap: keys, enable: false)
+        keyTapEnabled = false
         return true
     }
 
@@ -64,8 +70,18 @@ final class ActionModeTap {
             _ = start()
             return
         }
-        if !CGEvent.tapIsEnabled(tap: modifierTap) || CGEvent.tapIsEnabled(tap: keyTap) != mode.needsKeys {
-            sync()
+        sync()
+        repair()
+    }
+
+    /// Turns back on a tap that macOS turned off. It never disables a tap,
+    /// because a disable sends `tapDisabledByUserInput` back to the callback.
+    private func repair() {
+        if let modifierTap, !CGEvent.tapIsEnabled(tap: modifierTap) {
+            CGEvent.tapEnable(tap: modifierTap, enable: true)
+        }
+        if let keyTap, keyTapEnabled, !CGEvent.tapIsEnabled(tap: keyTap) {
+            CGEvent.tapEnable(tap: keyTap, enable: true)
         }
     }
 
@@ -89,12 +105,12 @@ final class ActionModeTap {
         }
     }
 
-    private func makeTap(_ types: [CGEventType]) -> CFMachPort? {
+    private func makeTap(_ types: [CGEventType], options: CGEventTapOptions) -> CFMachPort? {
         let mask = types.reduce(CGEventMask(0)) { $0 | 1 << CGEventMask($1.rawValue) }
         let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .defaultTap,
+            options: options,
             eventsOfInterest: mask,
             callback: { _, type, event, refcon in
                 guard let refcon else {
@@ -122,8 +138,12 @@ final class ActionModeTap {
         let code = UInt32(event.getIntegerValueField(.keyboardEventKeycode))
         let outcome: ActionMode.Outcome
         switch type {
-        case .tapDisabledByTimeout, .tapDisabledByUserInput:
-            sync()
+        case .tapDisabledByTimeout:
+            repair()
+            return true
+        case .tapDisabledByUserInput:
+            // `sync` disabled the key tap. Calling `sync` here again would
+            // disable it again and loop forever.
             return true
         case .flagsChanged:
             let down = event.flags.rawValue & Self.rightOptionFlag != 0
@@ -153,11 +173,9 @@ final class ActionModeTap {
 
     /// Enables the key tap only while needed and reports mode changes.
     private func sync() {
-        if let modifierTap {
-            CGEvent.tapEnable(tap: modifierTap, enable: true)
-        }
-        if let keyTap {
-            CGEvent.tapEnable(tap: keyTap, enable: mode.needsKeys)
+        if let keyTap, keyTapEnabled != mode.needsKeys {
+            keyTapEnabled = mode.needsKeys
+            CGEvent.tapEnable(tap: keyTap, enable: keyTapEnabled)
         }
         if mode.isOn != wasOn {
             wasOn = mode.isOn
